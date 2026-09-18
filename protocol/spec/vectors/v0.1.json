@@ -1,0 +1,270 @@
+{
+  "spec": "IMP Message Protocol v0.1",
+  "status": "normative conformance vectors",
+  "note": "All signatures and hashes are real. Key material is TEST ONLY (seeds are public).",
+  "reference_time": {
+    "unix": 1748736000,
+    "iso": "2025-06-01T00:00:00Z"
+  },
+  "freshness_window_seconds": 300,
+  "derivations": {
+    "kid": "base64( sha256(raw_ed25519_public_key)[0..15] )",
+    "sigprev_input": "key-record fields in order v,alg,k,kid,nb,na[,sub] joined by ';' (sigprev excluded), UTF-8",
+    "canonical": "REQ-4.7 (members sorted by name, no whitespace, minimal escapes, integer-only)",
+    "signature_input": "canonical serialization of the envelope with the 'sig' member removed"
+  },
+  "identities": {
+    "alice@example.net": {
+      "seed_b64": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=",
+      "public_key_b64": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=",
+      "kid": "NHUPmL1Z/PyUbaRaqr6TOw==",
+      "key_records": [
+        "v=imp1;alg=ed25519;k=iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=;kid=NHUPmL1Z/PyUbaRaqr6TOw==;nb=1735689600;na=1767225599",
+        "v=imp1;alg=ed25519;k=gTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5Q=;kid=ajgD1fBZkCocba+8m6Rykg==;nb=1746057600;na=1780271999;sigprev=u5p0uzRQSKl6PGldrd0+NxSsomwoA2M27DSU0yfaT9UCq4umsiHoZ0Wdai1LkfuL1WwoXG8F3YTinuLbL7P+Dg=="
+      ]
+    },
+    "alice@provider.example": {
+      "seed_b64": "AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM=",
+      "public_key_b64": "7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9E=",
+      "kid": "ti6Gf6LzOv5i1daxZC4WIQ==",
+      "key_records": [
+        "v=imp1;alg=ed25519;k=7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9E=;kid=ti6Gf6LzOv5i1daxZC4WIQ==;nb=1735689600;na=1767225599;sub=alice",
+        "v=imp1;alg=ed25519;k=ypOsFwUYcHHWe4PH/w7+gQjo7EUwV113JoeTM9vavnw=;kid=xblA7T9lw5GWXegpX8XSXw==;nb=1746057600;na=1780271999;sub=alice;sigprev=Xl/MPt+2baPlwCT+CZr4sSKqwX7TcHhgpvsbKyAtdAP/+mqnQQbpu+yuCKbM349buh1pMteBsx5207piqnUzAw=="
+      ]
+    }
+  },
+  "envelope_cases": [
+    {
+      "id": "V1",
+      "description": "Valid notification accepted",
+      "expected": {
+        "status": 202,
+        "token": null
+      },
+      "notes": "Canonical body; signature over signature_input; ts inside window and key epoch.",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"SXVgNd1kHovwNFedBgfviu8x/LD7T9uRpzgmUrShBrJqfX71lzkT/5kvFdK1SzMe5JCqhbRQfexPODDiSe0MDA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V2",
+      "description": "Duplicate of V1 (same msgid) refused",
+      "expected": {
+        "status": 409,
+        "token": "duplicate"
+      },
+      "notes": "Byte-identical resend after V1 was accepted. Idempotency by msgid.",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"SXVgNd1kHovwNFedBgfviu8x/LD7T9uRpzgmUrShBrJqfX71lzkT/5kvFdK1SzMe5JCqhbRQfexPODDiSe0MDA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V3",
+      "description": "Unknown future member tolerated",
+      "expected": {
+        "status": 202,
+        "token": null
+      },
+      "notes": "x_future is covered by the signature (canonical covers all members) but not interpreted.",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"ZmVkY2JhOTg3NjU0MzIxMA==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1,\"x_future\":\"ignored\"}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"ZmVkY2JhOTg3NjU0MzIxMA==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"i79DiQtL3ehWHvUCOqqyM3RdGLXSZgbNE1qViuu24wKzToPwGY6mleazsKeUGY4fOnjuYtFXa2QeHj1g5199BA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1,\"x_future\":\"ignored\"}"
+    },
+    {
+      "id": "V4",
+      "description": "Unknown message type tolerated",
+      "expected": {
+        "status": 202,
+        "token": null
+      },
+      "notes": "Verification MUST NOT depend on type (REQ-4.12).",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDAxMTIyMzM0NDU1NjY3Nw==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"weird\",\"v\":1}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDAxMTIyMzM0NDU1NjY3Nw==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"cvvMT95/+QeaUSWe8h7bzEKiXVjdqYR15C3BVaGHZWT4Fs3cNeRrJU7dWA1Fy6fo6L0o3vrb+MYaF3PkVLOTDA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"weird\",\"v\":1}"
+    },
+    {
+      "id": "V5",
+      "description": "Delegated sender accepted",
+      "expected": {
+        "status": 202,
+        "token": null
+      },
+      "notes": "provider.example publishes a sub=alice record for K3; the private key stays with the identity.",
+      "signature_input": "{\"from\":\"alice@provider.example\",\"kid\":\"ti6Gf6LzOv5i1daxZC4WIQ==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}",
+      "body": "{\"from\":\"alice@provider.example\",\"kid\":\"ti6Gf6LzOv5i1daxZC4WIQ==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"ywID8KNcDvZ/jriQglCWDrcqRxZGTSSqQnNDUuqU12zthXQ1Cal5g8HAixebNydyCCUsQVc4KHEaSLJgEcu4BQ==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V6",
+      "description": "Reserved in_reply_to present is ignored",
+      "expected": {
+        "status": 202,
+        "token": null
+      },
+      "notes": "Senders MUST NOT set it; receivers MUST ignore it (REQ-4.6).",
+      "signature_input": "{\"from\":\"alice@example.net\",\"in_reply_to\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"ODg5OWFhYmJjY2RkZWVmZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}",
+      "body": "{\"from\":\"alice@example.net\",\"in_reply_to\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"ODg5OWFhYmJjY2RkZWVmZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"BUFSleISn8BM01mygVqcSM58RiAximJkk9uTw1M80wzhq2v2IHvyijOsudJ5Ixeaovxd++1q6m/ETt8WD74xCw==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V7",
+      "description": "Unknown wire version",
+      "expected": {
+        "status": 505,
+        "token": "version_unsupported"
+      },
+      "notes": "Signed with v=99 on purpose: fail closed before any other check (REQ-6.1.1).",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":99}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"tcENyh88W8qhlFs4wRxdyjTvA9LMoo7CYdYrwJ/kgnecBmDnwOruaEFmCWxyc8xSD1RrXE4pNNuv7h1b6HZ3Bw==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":99}"
+    },
+    {
+      "id": "V8",
+      "description": "Tampered payload",
+      "expected": {
+        "status": 401,
+        "token": "sig_invalid"
+      },
+      "notes": "Body is V1 with the payload string replaced and V1's signature retained; canonical bytes no longer match.",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"SEVMTE8sIElNUA==\",\"sig\":\"SXVgNd1kHovwNFedBgfviu8x/LD7T9uRpzgmUrShBrJqfX71lzkT/5kvFdK1SzMe5JCqhbRQfexPODDiSe0MDA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V9",
+      "description": "Signature from expired key epoch",
+      "expected": {
+        "status": 410,
+        "token": "key_expired"
+      },
+      "notes": "ts (2026-01-01) is past K1.na; epoch check precedes freshness, so 410 not 422.",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1767225600,\"type\":\"notification\",\"v\":1}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"SRo/Vz0kzNMI6mOgptgerO3CJThiSCW82CVzRNy3DJyRm10OauYqJ9dbzalQ52z/Yh3q1CKZFL0fjG+ypmb6AQ==\",\"to\":[\"bob@example.org\"],\"ts\":1767225600,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V10",
+      "description": "Unknown kid",
+      "expected": {
+        "status": 403,
+        "token": "key_unknown"
+      },
+      "notes": "No published record carries this kid.",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"QkJCQkJCQkJCQkJCQkJCQg==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"QkJCQkJCQkJCQkJCQkJCQg==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"/pqOEV7SVnesQDUJajlhbHudfjmrNGO2u24T9Ay5jrpTcjPXlU7D0INS8/X/5598jsroNsqkpuHOutVIWrfqCw==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V13",
+      "description": "Stale timestamp",
+      "expected": {
+        "status": 422,
+        "token": "stale"
+      },
+      "notes": "ts is 1000 s old; default window is 300 s. Epoch still covers ts, so this exercises REQ-6.1.5.",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735000,\"type\":\"notification\",\"v\":1}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"loXirubp066VxNs/GDtGIG1ZKHPvPkPirHdYQ5POMvRzQhvcPV/hLqKsww7A63PNcIJ23PAyOMKPK90WjQ6aCg==\",\"to\":[\"bob@example.org\"],\"ts\":1748735000,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V14",
+      "description": "Policy refusal (open/closed inbox is receiver policy)",
+      "expected": {
+        "status": 403,
+        "token": "not_permitted"
+      },
+      "notes": "Only for receivers whose policy denies this sender; MUST NOT silently discard authenticated senders (REQ-5.11).",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"SXVgNd1kHovwNFedBgfviu8x/LD7T9uRpzgmUrShBrJqfX71lzkT/5kvFdK1SzMe5JCqhbRQfexPODDiSe0MDA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V15",
+      "description": "Addressed to another party",
+      "expected": {
+        "status": 403,
+        "token": "not_permitted"
+      },
+      "notes": "REQ-6.5: a receiver MUST NOT accept a message whose `to` does not name an address it serves.",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZQ==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"carol@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZQ==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"OE6Zw+fMhc6P68JG6/o9D5HwV5UwiCoNzhXLRYMO4AMcJoiMFE/jCUIByztHZvtYegskd4cSjdxxgz81w4svDg==\",\"to\":[\"carol@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V16",
+      "description": "kid with the wrong decoded length",
+      "expected": {
+        "status": 400,
+        "token": "malformed"
+      },
+      "notes": "REQ-4.13: `kid` MUST decode to exactly 16 bytes; the length check precedes key resolution.",
+      "signature_input": "{\"from\":\"alice@example.net\",\"kid\":\"BwcHBwcHBwc=\",\"msgid\":\"MDEwMjAzMDQwNTA2MDcwOA==\",\"payload\":\"aGVsbG8sIGltcA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}",
+      "body": "{\"from\":\"alice@example.net\",\"kid\":\"BwcHBwcHBwc=\",\"msgid\":\"MDEwMjAzMDQwNTA2MDcwOA==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"UhzwDc/+Tns9ViJ1ADmX9wYVtAHSDo+YKbQFMNxASAOj3sf8HgVROaqacYskxWaDYf/HCEYhPGVW896xda/gCg==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}"
+    },
+    {
+      "id": "V11",
+      "description": "Non-canonical body (whitespace inserted)",
+      "expected": {
+        "status": 400,
+        "token": "malformed"
+      },
+      "notes": "Whitespace after every \":\" and \",\". The received body MUST be byte-identical to the canonical serialization (REQ-6.1.2).",
+      "signature_input": null,
+      "body": "{\"from\": \"alice@example.net\", \"kid\": \"NHUPmL1Z/PyUbaRaqr6TOw==\", \"msgid\": \"MDEyMzQ1Njc4OWFiY2RlZg==\", \"payload\": \"aGVsbG8sIGltcA==\", \"sig\": \"SXVgNd1kHovwNFedBgfviu8x/LD7T9uRpzgmUrShBrJqfX71lzkT/5kvFdK1SzMe5JCqhbRQfexPODDiSe0MDA==\", \"to\": [\"bob@example.org\"], \"ts\": 1748735900, \"type\": \"notification\", \"v\": 1}"
+    },
+    {
+      "id": "V12",
+      "description": "Duplicate JSON member name",
+      "expected": {
+        "status": 400,
+        "token": "malformed"
+      },
+      "notes": "The name \"from\" occurs twice; a set of names has one canonical ordering, so this is malformed.",
+      "signature_input": null,
+      "body": "{\"from\":\"alice@example.net\",\"from\":\"mallory@evil.example\",\"kid\":\"NHUPmL1Z/PyUbaRaqr6TOw==\",\"msgid\":\"MDEyMzQ1Njc4OWFiY2RlZg==\",\"payload\":\"aGVsbG8sIGltcA==\",\"sig\":\"SXVgNd1kHovwNFedBgfviu8x/LD7T9uRpzgmUrShBrJqfX71lzkT/5kvFdK1SzMe5JCqhbRQfexPODDiSe0MDA==\",\"to\":[\"bob@example.org\"],\"ts\":1748735900,\"type\":\"notification\",\"v\":1}"
+    }
+  ],
+  "rotation_cases": [
+    {
+      "id": "R1",
+      "description": "Valid rotation: K2 cross-signed by K1, epochs overlap, distinct kid",
+      "prior_record": "v=imp1;alg=ed25519;k=iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=;kid=NHUPmL1Z/PyUbaRaqr6TOw==;nb=1735689600;na=1767225599",
+      "new_record": "v=imp1;alg=ed25519;k=gTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5Q=;kid=ajgD1fBZkCocba+8m6Rykg==;nb=1746057600;na=1780271999;sigprev=u5p0uzRQSKl6PGldrd0+NxSsomwoA2M27DSU0yfaT9UCq4umsiHoZ0Wdai1LkfuL1WwoXG8F3YTinuLbL7P+Dg==",
+      "sigprev_input": "v=imp1;alg=ed25519;k=gTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5Q=;kid=ajgD1fBZkCocba+8m6Rykg==;nb=1746057600;na=1780271999",
+      "expected": {
+        "accept": true
+      },
+      "notes": "REQ-3.2..REQ-3.4 satisfied."
+    },
+    {
+      "id": "R2",
+      "description": "Invalid sigprev (signed by the wrong key)",
+      "prior_record": "v=imp1;alg=ed25519;k=iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=;kid=NHUPmL1Z/PyUbaRaqr6TOw==;nb=1735689600;na=1767225599",
+      "new_record": "v=imp1;alg=ed25519;k=gTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5Q=;kid=ajgD1fBZkCocba+8m6Rykg==;nb=1746057600;na=1780271999;sigprev=xWlji4WSM1tifL1tbsmOLElSJiOfR9NRGOgvDkJc3NEoZz0fq7trDxqLuc8CV+rHGvF+W63Z9mBVthWnsJ9ZAA==",
+      "sigprev_input": "v=imp1;alg=ed25519;k=gTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5Q=;kid=ajgD1fBZkCocba+8m6Rykg==;nb=1746057600;na=1780271999",
+      "expected": {
+        "accept": false,
+        "reason": "sigprev does not verify under K1"
+      }
+    },
+    {
+      "id": "R3",
+      "description": "Invalid rotation: epochs do not overlap",
+      "prior_record": "v=imp1;alg=ed25519;k=iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=;kid=NHUPmL1Z/PyUbaRaqr6TOw==;nb=1735689600;na=1767225599",
+      "new_record": "v=imp1;alg=ed25519;k=gTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5Q=;kid=ajgD1fBZkCocba+8m6Rykg==;nb=1767225600;na=1780271999;sigprev=YH59dLV6LwcXr7cVxUGrVafrPjDj6mqSIVl+K4gCBHCL/2iiRk64EjFXv3vacK/rqcSRMI8hv4d6+faCB+5sBg==",
+      "sigprev_input": "v=imp1;alg=ed25519;k=gTl3Dqh9F19Wo1Rmw0x+zMuNipG07jeiXfYPW4/Js5Q=;kid=ajgD1fBZkCocba+8m6Rykg==;nb=1767225600;na=1780271999",
+      "expected": {
+        "accept": false,
+        "reason": "nb(K2) > na(K1): REQ-3.4 violated"
+      }
+    },
+    {
+      "id": "R4",
+      "description": "Invalid rotation: key id reintroduced (K1 republished as successor)",
+      "prior_record": "v=imp1;alg=ed25519;k=iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=;kid=NHUPmL1Z/PyUbaRaqr6TOw==;nb=1735689600;na=1767225599",
+      "new_record": "v=imp1;alg=ed25519;k=iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=;kid=NHUPmL1Z/PyUbaRaqr6TOw==;nb=1746057600;na=1780271999;sigprev=wDUxTXwV1i1V1WYL1YsVMNtffN9rLs3yUcKR73oWbTZ0x7XhGeZe3J9dbOIpS2cnidZyg4lDkYL1ZUGat6shBQ==",
+      "sigprev_input": "v=imp1;alg=ed25519;k=iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=;kid=NHUPmL1Z/PyUbaRaqr6TOw==;nb=1746057600;na=1780271999",
+      "expected": {
+        "accept": false,
+        "reason": "kid reuse: REQ-2.8 / REQ-3.5 violated"
+      }
+    },
+    {
+      "id": "R5",
+      "description": "Valid delegated rotation: K4 cross-signed by K3, sub=alice included in sigprev bytes",
+      "prior_record": "v=imp1;alg=ed25519;k=7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9E=;kid=ti6Gf6LzOv5i1daxZC4WIQ==;nb=1735689600;na=1767225599;sub=alice",
+      "new_record": "v=imp1;alg=ed25519;k=ypOsFwUYcHHWe4PH/w7+gQjo7EUwV113JoeTM9vavnw=;kid=xblA7T9lw5GWXegpX8XSXw==;nb=1746057600;na=1780271999;sub=alice;sigprev=Xl/MPt+2baPlwCT+CZr4sSKqwX7TcHhgpvsbKyAtdAP/+mqnQQbpu+yuCKbM349buh1pMteBsx5207piqnUzAw==",
+      "sigprev_input": "v=imp1;alg=ed25519;k=ypOsFwUYcHHWe4PH/w7+gQjo7EUwV113JoeTM9vavnw=;kid=xblA7T9lw5GWXegpX8XSXw==;nb=1746057600;na=1780271999;sub=alice",
+      "expected": {
+        "accept": true
+      },
+      "notes": "Pins that `sub` is part of the signed key-record bytes (REQ-3.2)."
+    }
+  ]
+}

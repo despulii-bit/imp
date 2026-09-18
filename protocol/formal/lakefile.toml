@@ -1,0 +1,6 @@
+name = "Imp"
+version = "0.1.0"
+description = "Lean formalization of the IMP Message Protocol"
+
+[[lean_lib]]
+name = "Imp"

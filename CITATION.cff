@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: IMP Message Protocol
+message: "If you use or implement this specification, please cite it as below."
+type: standard
+authors:
+  - name: despulii
+    email: despulii@gmail.com
+version: 0.1.0
+date-released: 2026-09-18
+abstract: >-
+  A self-hosted-first messaging protocol in which a sender's identity is a
+  cryptographically verifiable property of the sender's own domain: keys are
+  published in DNS, every message is signed, and delivery is an HTTPS POST to
+  a discovered endpoint. Authentication is a check rather than a reputation
+  built over time.
+license: CC0-1.0
+repository-code: https://github.com/despulii-bit/imp
+keywords:
+  - messaging
+  - protocol
+  - self-hosted
+  - ed25519
+  - dns
